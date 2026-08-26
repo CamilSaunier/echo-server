@@ -1,14 +1,13 @@
 import express from "express";
+import { messageRoutes } from "./routes/message.routes";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
 app.use(express.json());
 
-// Route de santé
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
+// Enregistrement des routes de l'API
+app.use("/api/messages", messageRoutes);
 
 // Démarrage du serveur
 app.listen(PORT, () => {

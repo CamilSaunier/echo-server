@@ -24,6 +24,13 @@ RUN pnpm install
 # On copie l'intégralité du code du projet dans le conteneur.
 COPY . .
 
+# -----------------------------------------------------------
+# 6.5. GÉNÉRATION DU CLIENT PRISMA
+# Prisma a besoin du fichier schema.prisma qu'on vient de 
+# copier juste au-dessus pour générer les types TypeScript.
+# -----------------------------------------------------------
+RUN pnpm prisma generate
+
 # 7. PORT DU SERVEUR
 # On indique que le serveur backend écoute sur le port 4000.
 EXPOSE 4000
