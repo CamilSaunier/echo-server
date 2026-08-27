@@ -7,8 +7,88 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model Message {
+// 1. UTILISATEUR & AUTHENTIFICATION
+model User {
+  id                   String       @id @default(uuid())
+  email                String       @unique
+  passwordHash         String
+  username             String       @unique
+  
+  // Sécurité / Mot de passe oublié
+  resetPasswordToken   String?      @unique
+  resetPasswordExpires DateTime?
+  
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  // Relations
+  refreshTokens         RefreshToken[]
+  sentMessages          Message[]
+  conversations         ConversationParticipant[]
+  
+  // Système d'amis
+  sentRequests          Friendship[] @relation("UserSentRequests")
+  receivedRequests      Friendship[] @relation("UserReceivedRequests")
+}
+
+// 2. GESTION DES SESSIONS (Refresh Tokens)
+model RefreshToken {
   id        String   @id @default(uuid())
-  content   String
+  token     String   @unique // Le hash du refresh token stocké pour la révocation
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
   createdAt DateTime @default(now())
+}
+
+// 3. SYSTÈME D'AMIS
+model Friendship {
+  id        String   @id @default(uuid())
+  status    String   @default("PENDING") // PENDING (en attente), ACCEPTED (amis), BLOCKED
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation("UserSentRequests", fields: [userId], references: [id], onDelete: Cascade)
+
+  friendId  String
+  friend    User     @relation("UserReceivedRequests", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+}
+
+// 4. CONVERSATIONS (1-to-1 ou Groupes)
+model Conversation {
+  id           String                    @id @default(uuid())
+  name         String?                   @db.VarChar(255) // Null pour du 1-to-1, rempli pour un groupe
+  isGroup      Boolean                   @default(false)
+  createdAt    DateTime                  @default(now())
+
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+// 5. TABLE DE LIAISON DES PARTICIPANTS
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  userId         String
+  conversationId String
+  joinedAt       DateTime     @default(now())
+
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, conversationId])
+}
+
+// 6. MESSAGES
+model Message {
+  id             String       @id @default(uuid())
+  content        String
+  createdAt      DateTime     @default(now())
+
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 }
