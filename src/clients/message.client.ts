@@ -9,16 +9,29 @@ export class MessageClient {
     this.messageRepository = new MessageRepository();
   }
 
+  /**
+   * Retrieves all messages.
+   * @returns A promise resolving to an array of messages.
+   */
   async getAllMessages(): Promise<Message[]> {
+    // Récupère la liste de tous les messages via le repository
     return await this.messageRepository.findAll();
   }
 
-  async createMessage(content: string): Promise<Message> {
-    // Si le contenu est vide, on lève une AppError propre (400 Bad Request)
+  /**
+   * Creates a new message after validating its content.
+   * @param content - The text content of the message.
+   * @param userId - The ID of the user sending the message.
+   * @param conversationId - The ID of the target conversation.
+   * @returns The created message.
+   */
+  async createMessage(content: string, userId: string, conversationId: string): Promise<Message> {
+    // Vérifie si le contenu est vide ou invalide
     if (!content || content.trim() === "") {
       throw new AppError("Le contenu du message ne peut pas être vide.", 400);
     }
 
-    return await this.messageRepository.create(content.trim());
+    // Délègue la création au repository en transmettant les relations requises
+    return await this.messageRepository.create(content.trim(), userId, conversationId);
   }
 }

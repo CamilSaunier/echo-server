@@ -9,30 +9,35 @@ export class MessageController {
   }
 
   /**
-   * Récupère tous les messages.
+   * Retrieves all messages.
    * Route: GET /messages
    */
   getMessages = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+      // Récupère l'ensemble des messages
       const messages = await this.messageClient.getAllMessages();
       res.status(200).json(messages);
     } catch (error) {
-      // On transmet l'erreur au gestionnaire global
+      // Transmet l'erreur au middleware de gestion globale
       next(error);
     }
   };
 
   /**
-   * Crée un nouveau message.
+   * Creates a new message.
    * Route: POST /messages
    */
   createMessage = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { content } = req.body;
-      const newMessage = await this.messageClient.createMessage(content);
+      // Extraction des données nécessaires depuis le corps de la requête
+      const { content, userId, conversationId } = req.body;
+
+      // Crée le message en passant les paramètres obligatoires au client métier
+      const newMessage = await this.messageClient.createMessage(content, userId, conversationId);
+
       res.status(201).json(newMessage);
     } catch (error) {
-      // On transmet l'erreur (qu'elle vienne de l'AppError du client ou de Prisma) au gestionnaire global
+      // Transmet l'erreur au middleware global
       next(error);
     }
   };
