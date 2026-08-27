@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { MessageClient } from "../clients/message.client";
 
 export class MessageController {
@@ -12,12 +12,13 @@ export class MessageController {
    * Récupère tous les messages.
    * Route: GET /messages
    */
-  getMessages = async (req: Request, res: Response): Promise<void> => {
+  getMessages = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const messages = await this.messageClient.getAllMessages();
       res.status(200).json(messages);
     } catch (error) {
-      res.status(500).json({ error: "Erreur interne du serveur." });
+      // On transmet l'erreur au gestionnaire global
+      next(error);
     }
   };
 
@@ -25,18 +26,14 @@ export class MessageController {
    * Crée un nouveau message.
    * Route: POST /messages
    */
-  createMessage = async (req: Request, res: Response): Promise<void> => {
+  createMessage = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { content } = req.body;
       const newMessage = await this.messageClient.createMessage(content);
       res.status(201).json(newMessage);
-    } catch (error: any) {
-      // Si l'erreur vient de notre règle métier (message vide)
-      if (error.message === "Le contenu du message ne peut pas être vide.") {
-        res.status(400).json({ error: error.message });
-        return;
-      }
-      res.status(500).json({ error: "Erreur interne du serveur." });
+    } catch (error) {
+      // On transmet l'erreur (qu'elle vienne de l'AppError du client ou de Prisma) au gestionnaire global
+      next(error);
     }
   };
 }
