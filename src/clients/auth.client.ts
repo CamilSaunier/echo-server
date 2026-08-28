@@ -81,4 +81,23 @@ export class AuthClient {
       },
     };
   }
+  /**
+   * Retrieves user profile details by ID.
+   *
+   * @param userId - The UUID of the user.
+   * @returns The sanitized user object.
+   */
+  async getProfile(userId: string) {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new AppError("User not found.", 404);
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      createdAt: user.createdAt,
+    };
+  }
 }

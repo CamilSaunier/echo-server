@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { AuthController } from "../controllers/auth.controller";
 import { validate } from "../middlewares/validate.middleware";
+import { authenticateToken } from "../middlewares/auth.middleware";
 import { registerSchema, loginSchema } from "../validators/auth.validator";
 
 const router = Router();
@@ -19,5 +20,12 @@ router.post("/register", validate(registerSchema), authController.register);
  * @access  Public
  */
 router.post("/login", validate(loginSchema), authController.login);
+
+/**
+ * @route   GET /api/auth/me
+ * @desc    Retrieves the currently authenticated user's profile
+ * @access  Private (Requires valid Access Token)
+ */
+router.get("/me", authenticateToken, authController.getMe);
 
 export const authRoutes = router;

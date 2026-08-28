@@ -64,4 +64,25 @@ export class AuthController {
       next(error); // Forwards the error to the global error handling middleware (AppError)
     }
   };
+
+  /**
+   * Retrieves the current authenticated user's profile.
+   *
+   * @param req - Express request object containing user payload from auth middleware.
+   * @param res - Express response object.
+   * @param next - Express next function for error handling propagation.
+   */
+  getMe = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // Le middleware garantit que req.user existe, on fait confiance au type TypeScript
+      const user = await this.authClient.getProfile(req.user!.userId);
+
+      res.status(200).json({
+        success: true,
+        data: { user },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
