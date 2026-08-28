@@ -1,21 +1,23 @@
 import { Router } from "express";
 import { AuthController } from "../controllers/auth.controller";
+import { validate } from "../middlewares/validate.middleware"; // Ton middleware
+import { registerSchema, loginSchema } from "../validators/auth.validator"; // Tes schémas
 
 const router = Router();
 const authController = new AuthController();
 
 /**
  * @route   POST /api/auth/register
- * @desc    Registers a new user account
+ * @desc    Registers a new user account with validation
  * @access  Public
  */
-router.post("/register", authController.register);
+router.post("/register", validate(registerSchema), authController.register);
 
 /**
  * @route   POST /api/auth/login
- * @desc    Authenticates a user, returns an access token, and sets a secure HTTP-only refresh token cookie
+ * @desc    Authenticates a user with validation
  * @access  Public
  */
-router.post("/login", authController.login);
+router.post("/login", validate(loginSchema), authController.login);
 
 export default router;
