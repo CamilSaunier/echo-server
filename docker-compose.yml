@@ -4,45 +4,35 @@ services:
     image: postgres:17-alpine
     container_name: echo-db
     ports:
-      # Map le port PostgreSQL hôte/conteneur depuis le .env
       - "${DB_PORT:-5432}:5432"
     environment:
-      # Identifiants et nom de BDD lus directement depuis le .env
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      # Persistance des données BDD sur le volume nommé Docker
       - postgres_data:/var/lib/postgresql/data
 
   # Service Backend Node.js / Express
   echo-server:
     build:
-      # Contexte d'exécution et Dockerfile
       context: .
       dockerfile: Dockerfile
     container_name: echo-server
-    # Commande de démarrage avec hot-reload
     command: pnpm run dev
     ports:
-      # Map le port HTTP du serveur depuis le .env
       - "${PORT:-4000}:${PORT:-4000}"
     volumes:
-      # Live-reload : monte le code local dans le conteneur
       - .:/app
-      # Isole le node_modules propre à l'environnement Linux du conteneur
-      - /app/node_modules
+      - pnpm_modules:/app/node_modules # Volume nommé pour isoler et persister les node_modules de Docker
     environment:
-      # Variables applicatives lues depuis le .env
       - PORT=${PORT}
       - NODE_ENV=${NODE_ENV}
       - DATABASE_URL=${DATABASE_URL}
-      # Flag non-interactif pour pnpm sous Docker
       - CI=true
     depends_on:
-      # S'assure que le conteneur BDD est démarré avant le serveur
       - echo-db
 
 # Déclaration des volumes persistants
 volumes:
   postgres_data:
+  pnpm_modules:
