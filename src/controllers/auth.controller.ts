@@ -85,4 +85,37 @@ export class AuthController {
       next(error);
     }
   };
+
+  /**
+   * Handles access token refresh requests and updates the HttpOnly cookie with a rotated token.
+   *
+   * @param req - Express Request object containing cookies.
+   * @param res - Express Response object.
+   * @param next - Express NextFunction for central error handling.
+   */
+  refresh = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const rawRefreshToken = req.cookies?.refreshToken;
+
+      const { accessToken, newRawRefreshToken, user } = await this.authClient.refreshAccessToken(rawRefreshToken);
+
+      // met le nouveau refresh token (rotation) dans un cookie HttpOnly
+      res.cookie("refreshToken", newRawRefreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
+      res.status(200).json({
+        success: true,
+        data: {
+          accessToken,
+          user,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

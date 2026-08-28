@@ -22,6 +22,13 @@ router.post("/register", validate(registerSchema), authController.register);
 router.post("/login", validate(loginSchema), authController.login);
 
 /**
+ * @route   POST /api/auth/refresh
+ * @desc    Refreshes access token and rotates refresh token using HttpOnly cookie
+ * @access  Public (Requires valid HttpOnly refresh token cookie)
+ */
+router.post("/refresh", authController.refresh);
+
+/**
  * @route   GET /api/auth/me
  * @desc    Retrieves the currently authenticated user's profile
  * @access  Private (Requires valid Access Token)

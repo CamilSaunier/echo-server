@@ -18,12 +18,16 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: echo-server
-    command: pnpm run dev
+    # <-- C'EST ICI QUE ÇA CHANGE
+    # Avant de lancer "pnpm dev", on réinstalle les dépendances.
+    # Ça garantit que le node_modules du volume est toujours synchro
+    # avec ton package.json, même si le volume est "périmé".
+    command: sh -c "pnpm install && pnpm dev"
     ports:
       - "${PORT:-4000}:${PORT:-4000}"
     volumes:
       - .:/app
-      - pnpm_modules:/app/node_modules # Volume nommé pour isoler et persister les node_modules de Docker
+      - pnpm_modules:/app/node_modules
     environment:
       - PORT=${PORT}
       - NODE_ENV=${NODE_ENV}
@@ -32,7 +36,6 @@ services:
     depends_on:
       - echo-db
 
-# Déclaration des volumes persistants
 volumes:
   postgres_data:
   pnpm_modules:

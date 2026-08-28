@@ -3,7 +3,7 @@ import { RefreshTokenRepository } from "../repositories/refresh-token.repository
 import { PasswordUtils } from "../utils/password.utils";
 import { JwtUtils } from "../utils/jwt.utils";
 import { TokenUtils } from "../utils/hash-token.utils";
-import { AppError } from "../middlewares/error.middleware"; // Import de notre gestionnaire d'erreurs
+import { AppError } from "../middlewares/error.middleware";
 import { User } from "@prisma/client";
 
 export class AuthClient {
@@ -98,6 +98,67 @@ export class AuthClient {
       email: user.email,
       username: user.username,
       createdAt: user.createdAt,
+    };
+  }
+  /**
+   * Refreshes the access token and applies Refresh Token Rotation by revoking
+   * the old refresh token and issuing a new pair.
+   *
+   * @param rawRefreshToken - The raw refresh token retrieved from the HttpOnly cookie.
+   * @returns An object containing the new access token, rotated raw refresh token, and user data.
+   */
+  async refreshAccessToken(rawRefreshToken: string) {
+    if (!rawRefreshToken) {
+      throw new AppError("Refresh token missing", 401);
+    }
+
+    // 1. Hash le toke entrant
+    const tokenHash = TokenUtils.hash(rawRefreshToken);
+
+    // 2. Trouve le token dans le BDD
+    const storedToken = await this.refreshTokenRepository.findByToken(tokenHash);
+    if (!storedToken) {
+      throw new AppError("Invalid or revoked refresh token", 401);
+    }
+
+    // 3. ROTATION: Efface instantanément le token utilisé pour qu'il ne soit plus réutilisable
+    await this.refreshTokenRepository.deleteByToken(tokenHash);
+
+    // 4. Vérifie si le token est expiré
+    if (storedToken.expiresAt < new Date()) {
+      throw new AppError("Refresh token expired", 401);
+    }
+
+    // 5. Vérifie si l'utilisateur existe toujours
+    const user = await this.userRepository.findById(storedToken.userId);
+    if (!user) {
+      throw new AppError("User not found", 401);
+    }
+
+    // 6. Génère un nouvelle accessToken
+    const payload = { userId: user.id, email: user.email };
+    const newAccessToken = JwtUtils.generateAccessToken(payload);
+
+    // 7. Génère et hash un nouveau refresh Token(Rotation)
+    const newRawRefreshToken = JwtUtils.generateRefreshToken(payload);
+    const newRefreshTokenHash = TokenUtils.hash(newRawRefreshToken);
+
+    // 8. enregistre le nouveau refresh token en BDD (7 days expiration)
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await this.refreshTokenRepository.create({
+      userId: user.id,
+      token: newRefreshTokenHash,
+      expiresAt,
+    });
+
+    return {
+      accessToken: newAccessToken,
+      newRawRefreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+      },
     };
   }
 }

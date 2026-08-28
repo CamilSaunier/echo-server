@@ -60,4 +60,16 @@ export class RefreshTokenRepository {
       where: { userId },
     });
   }
+
+  /**
+   * Finds a refresh token record solely by its hash value.
+   *
+   * @param token - The hashed refresh token string.
+   * @returns The refresh token object if found, or null otherwise.
+   */
+  async findByToken(token: string): Promise<RefreshToken | null> {
+    return prisma.refreshToken.findFirst({
+      where: { token },
+    });
+  }
 }
