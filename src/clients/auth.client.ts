@@ -3,6 +3,7 @@ import { RefreshTokenRepository } from "../repositories/refresh-token.repository
 import { PasswordUtils } from "../utils/password.utils";
 import { JwtUtils } from "../utils/jwt.utils";
 import { TokenUtils } from "../utils/hash-token.utils";
+import { AppError } from "../middlewares/error.middleware"; // Import de notre gestionnaire d'erreurs
 import { User } from "@prisma/client";
 
 export class AuthClient {
@@ -16,10 +17,10 @@ export class AuthClient {
    * @returns The newly created user.
    */
   async register(data: { email: string; username: string; password: string }): Promise<User> {
-    // 1. Vérifier si l'utilisateur existe déjà
+    // 1. Vérifier si l'utilisateur existe déjà -> 400 Bad Request
     const existingUser = await this.userRepository.findByEmail(data.email);
     if (existingUser) {
-      throw new Error("Email already in use.");
+      throw new AppError("Email already in use.", 400);
     }
 
     // 2. Hacher le mot de passe
@@ -42,16 +43,16 @@ export class AuthClient {
    * @returns The access token, raw refresh token, and user info.
    */
   async login(credentials: { email: string; password: string }) {
-    // 1. Trouver l'utilisateur par son email
+    // 1. Trouver l'utilisateur par son email -> 401 Unauthorized (on ne divulgue pas si l'email existe ou non)
     const user = await this.userRepository.findByEmail(credentials.email);
     if (!user) {
-      throw new Error("Invalid credentials.");
+      throw new AppError("Invalid credentials.", 401);
     }
 
-    // 2. Comparer le mot de passe
+    // 2. Comparer le mot de passe -> 401 Unauthorized
     const isPasswordValid = await PasswordUtils.compare(credentials.password, user.passwordHash);
     if (!isPasswordValid) {
-      throw new Error("Invalid credentials.");
+      throw new AppError("Invalid credentials.", 401);
     }
 
     // 3. Générer les tokens (Access et Refresh)
@@ -69,7 +70,7 @@ export class AuthClient {
       expiresAt,
     });
 
-    // 5. On retourne le token en clair pour le cookie (géré par le controller) et l'access token
+    // 5. On retourne le token en clair pour le cookie et l'access token
     return {
       accessToken,
       refreshToken, // Le contrôleur l'enverra dans un cookie HttpOnly
