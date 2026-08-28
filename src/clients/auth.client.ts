@@ -161,4 +161,23 @@ export class AuthClient {
       },
     };
   }
+
+  /**
+   * Logs out a user by revoking their refresh token from the database.
+   *
+   * @param rawRefreshToken - The raw refresh token from the cookie.
+   */
+  async logout(rawRefreshToken: string) {
+    if (rawRefreshToken) {
+      const tokenHash = TokenUtils.hash(rawRefreshToken);
+      await this.refreshTokenRepository.deleteByToken(tokenHash);
+    }
+    return {
+      cookieOptions: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict" as const,
+      },
+    };
+  }
 }

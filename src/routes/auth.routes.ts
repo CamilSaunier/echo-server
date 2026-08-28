@@ -29,6 +29,13 @@ router.post("/login", validate(loginSchema), authController.login);
 router.post("/refresh", authController.refresh);
 
 /**
+ * @route   POST /api/auth/logout
+ * @desc    Logs out the user by revoking the refresh token and clearing the cookie
+ * @access  Public (Clears cookie if present)
+ */
+router.post("/logout", authController.logout);
+
+/**
  * @route   GET /api/auth/me
  * @desc    Retrieves the currently authenticated user's profile
  * @access  Private (Requires valid Access Token)

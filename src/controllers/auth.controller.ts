@@ -118,4 +118,23 @@ export class AuthController {
       next(error);
     }
   };
+
+  /**
+   * Handles user logout by revoking the refresh token and clearing the authentication cookie.
+   *
+   * @param req - Express Request object containing cookies.
+   * @param res - Express Response object used to clear the cookie and send the response.
+   * @param next - Express NextFunction for error handling.
+   */
+  logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const rawRefreshToken = req.cookies?.refreshToken;
+      const { cookieOptions } = await this.authClient.logout(rawRefreshToken);
+
+      res.clearCookie("refreshToken", cookieOptions);
+      res.status(200).json({ success: true, message: "Logged out successfully" });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
