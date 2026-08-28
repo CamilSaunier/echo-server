@@ -20,7 +20,7 @@ export class AuthClient {
     // 1. Vérifier si l'utilisateur existe déjà -> 400 Bad Request
     const existingUser = await this.userRepository.findByEmail(data.email);
     if (existingUser) {
-      throw new AppError("Email already in use.", 400);
+      throw new AppError("Email already in use.", 409);
     }
 
     // 2. Hacher le mot de passe

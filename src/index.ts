@@ -6,6 +6,7 @@ import { corsMiddleware } from "./middlewares/cors.middleware";
 import { apiLimiter } from "./middlewares/limiter.middleware";
 import { morganMiddleware } from "./middlewares/morgan.middleware";
 import { messageRoutes } from "./routes/message.routes";
+import { authRoutes } from "./routes/auth.routes";
 import { configureWebSocket } from "./socket";
 // 1. Importe ton errorHandler en plus de AppError
 import { AppError, errorHandler } from "./middlewares/error.middleware";
@@ -28,6 +29,7 @@ app.use(express.json({ limit: "10kb" }));
 
 // --- ROUTES ---
 app.use("/api/messages", messageRoutes);
+app.use("/api/auth", authRoutes);
 
 app.get("/", (req: Request, res: Response) => {
   res.json({ message: "Bienvenue sur l'API Echo !" });
