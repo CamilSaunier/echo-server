@@ -16,20 +16,26 @@ WORKDIR /app
 # On copie d'abord uniquement les fichiers de dépendances.
 COPY package.json pnpm-lock.yaml ./
 
+# 4.5. COPIE DU SCHÉMA PRISMA (AVANT L'INSTALL)
+# Le "postinstall" de package.json lance "prisma generate" automatiquement
+# à la fin de "pnpm install" (étape 5). Prisma a donc besoin du dossier
+# prisma/ (contenant schema.prisma) AVANT cette étape, sinon la génération
+# échoue avec "Could not find Prisma Schema" et le build entier plante.
+COPY prisma ./prisma
+
 # 5. INSTALLATION DES DÉPENDANCES
 # En dev, on installe tout (y compris les outils de dev comme TypeScript ou tsx).
+# Cette commande déclenche aussi "postinstall" -> "prisma generate",
+# qui va maintenant trouver son schéma grâce à l'étape 4.5.
 RUN pnpm install
 
 # 6. COPIE DU CODE SOURCE
-# On copie l'intégralité du code du projet dans le conteneur.
+# On copie l'intégralité du reste du projet dans le conteneur.
+# (Le dossier prisma est déjà présent depuis l'étape 4.5, pas de conflit.)
 COPY . .
 
-# -----------------------------------------------------------
-# 6.5. GÉNÉRATION DU CLIENT PRISMA
-# Prisma a besoin du fichier schema.prisma qu'on vient de 
-# copier juste au-dessus pour générer les types TypeScript.
-# -----------------------------------------------------------
-RUN pnpm prisma generate
+# Remarque : plus besoin d'un "RUN pnpm prisma generate" séparé ici.
+# Le postinstall de pnpm install (étape 5) s'en charge déjà correctement.
 
 # 7. PORT DU SERVEUR
 # On indique que le serveur backend écoute sur le port 4000.
