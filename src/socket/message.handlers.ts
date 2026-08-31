@@ -14,7 +14,10 @@ export const registerMessageHandlers = (io: Server, socket: Socket) => {
   // Écoute de l'événement déclenché par le front-end lorsqu'un utilisateur envoie un message
   socket.on("message:send", async (data: { content: string; userId: string; conversationId: string }) => {
     try {
-      const { content, userId, conversationId } = data;
+      const { content, conversationId } = data;
+
+      // On récupère l'ID de l'utilisateur authentifié via le token JWT
+      const userId = socket.data.userId;
 
       // 1. Persistance : On passe par notre client pour enregistrer le message en BDD avec ses relations
       const newMessage = await messageClient.createMessage(content, userId, conversationId);
