@@ -1,6 +1,6 @@
 // src/test-socket.ts
 import { io } from "socket.io-client";
-import { JwtUtils } from "./utils/jwt.utils"; // On importe ton utilitaire JWT
+import { JwtUtils } from "../src/utils/jwt.utils"; // On importe ton utilitaire JWT
 
 // La variable est automatiquement injectée grâce à --env-file=.env
 const SOCKET_URL = process.env.SOCKET_URL || "http://localhost:8000";
