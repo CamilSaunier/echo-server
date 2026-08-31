@@ -1,6 +1,6 @@
 // src/socket/message.handlers.ts
 import { Server, Socket } from "socket.io";
-import { MessageClient } from "../clients/message.client";
+import { MessageClient } from "../../clients/message.client";
 
 // Instanciation du client métier pour dialoguer avec la base de données (Prisma)
 const messageClient = new MessageClient();
