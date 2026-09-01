@@ -14,7 +14,7 @@ import { configureWebSocket } from "./socket";
 import { AppError, errorHandler } from "./middlewares/error.middleware";
 
 const app: Application = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 8000;
 
 // Création explicite du serveur HTTP en y injectant Express
 const server = http.createServer(app);
