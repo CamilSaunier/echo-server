@@ -42,4 +42,4 @@ router.post("/logout", authController.logout);
  */
 router.get("/me", authenticateToken, authController.getMe);
 
-export const authRoutes = router;
+export const authRoutes: Router = router;

@@ -20,4 +20,4 @@ router.get("/", messageController.getMessages);
  */
 router.post("/", validate(createMessageValidator), messageController.createMessage);
 
-export const messageRoutes = router;
+export const messageRoutes: Router = router;
