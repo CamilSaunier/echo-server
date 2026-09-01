@@ -1,5 +1,6 @@
 // Initialisation du serveur Socket.io et gestion globale
 // src/socket/index.ts
+
 import { Server as HttpServer } from "http";
 import { Server, Socket } from "socket.io";
 import { socketAuthMiddleware } from "./middlewares/auth.middleware";

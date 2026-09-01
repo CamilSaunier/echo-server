@@ -1,5 +1,6 @@
 // src/index.ts
-import express, { Application, Request, Response } from "express";
+import express from "express";
+import type { Application, Request, Response } from "express";
 import http from "http";
 import cookieParser from "cookie-parser";
 import { helmetMiddleware } from "./middlewares/helmet.middleware";

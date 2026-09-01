@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 
 /**
  * Classe personnalisée pour nos erreurs opérationnelles (ex: 404, 401, 403, 400).

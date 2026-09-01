@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { ZodType, ZodError } from "zod";
 import { AppError } from "./error.middleware"; // On importe AppError pour l'utiliser ici
 

@@ -1,5 +1,5 @@
 import { prisma } from "../config/prisma";
-import { User } from "@prisma/client";
+import type { User } from "@prisma/client";
 
 /**
  * Repository for managing user data operations in the database.

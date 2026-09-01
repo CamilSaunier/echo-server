@@ -4,7 +4,7 @@ import { PasswordUtils } from "../utils/password.utils";
 import { JwtUtils } from "../utils/jwt.utils";
 import { TokenUtils } from "../utils/hash-token.utils";
 import { AppError } from "../middlewares/error.middleware";
-import { User } from "@prisma/client";
+import type { User } from "@prisma/client";
 
 export class AuthClient {
   private userRepository = new UserRepository();

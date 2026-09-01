@@ -1,5 +1,5 @@
 import { prisma } from "../config/prisma";
-import { RefreshToken } from "@prisma/client";
+import type { RefreshToken } from "@prisma/client";
 
 /**
  * Repository for managing refresh token operations in the database.
