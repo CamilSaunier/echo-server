@@ -1,7 +1,10 @@
+// src/clients/message.client.ts
 import { MessageRepository } from "../repositories/message.repository";
 import { AppError } from "../middlewares/error.middleware";
-import type { Message } from "@prisma/client";
 
+/**
+ * Client service handling business logic and validations for messages.
+ */
 export class MessageClient {
   private messageRepository: MessageRepository;
 
@@ -10,28 +13,38 @@ export class MessageClient {
   }
 
   /**
-   * Retrieves all messages.
-   * @returns A promise resolving to an array of messages.
+   * Retrieves all messages belonging to a specific conversation.
+   *
+   * @async
+   * @function getMessagesByConversationId
+   * @param {string} conversationId - The unique identifier of the target conversation
+   * @returns {Promise<any[]>} List of messages ordered chronologically
+   * @throws {AppError} If conversation ID is missing
    */
-  async getAllMessages(): Promise<Message[]> {
-    // Récupère la liste de tous les messages via le repository
-    return await this.messageRepository.findAll();
+  async getMessagesByConversationId(conversationId: string) {
+    // Validation des données d'entrée
+    if (!conversationId) {
+      throw new AppError("ID de conversation manquant.", 400);
+    }
+
+    // Récupération de l'historique complet des messages via le repository
+    return await this.messageRepository.findMessagesByConversationId(conversationId);
   }
 
   /**
-   * Creates a new message after validating its content.
-   * @param content - The text content of the message.
-   * @param userId - The ID of the user sending the message.
-   * @param conversationId - The ID of the target conversation.
-   * @returns The created message.
+   * Retrieves all messages in the system.
    */
-  async createMessage(content: string, userId: string, conversationId: string): Promise<Message> {
-    // Vérifie si le contenu est vide ou invalide
-    if (!content || content.trim() === "") {
-      throw new AppError("Le contenu du message ne peut pas être vide.", 400);
-    }
+  async getAllMessages() {
+    return await this.messageRepository.findAllMessages();
+  }
 
-    // Délègue la création au repository en transmettant les relations requises
-    return await this.messageRepository.create(content.trim(), userId, conversationId);
+  /**
+   * Creates a new message record.
+   */
+  async createMessage(content: string, userId: string, conversationId: string) {
+    if (!content || !userId || !conversationId) {
+      throw new AppError("Données de message incomplètes.", 400);
+    }
+    return await this.messageRepository.createMessage(content, userId, conversationId);
   }
 }

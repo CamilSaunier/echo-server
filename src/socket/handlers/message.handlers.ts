@@ -1,32 +1,38 @@
-// src/socket/message.handlers.ts
+// src/socket/handlers/message.handlers.ts
 import { Server, Socket } from "socket.io";
 import { MessageClient } from "../../clients/message.client";
+import { ConversationClient } from "../../clients/conversation.client";
 
-// Instanciation du client métier pour dialoguer avec la base de données (Prisma)
 const messageClient = new MessageClient();
+const conversationClient = new ConversationClient();
 
 /**
- * Registers all message-related event listeners for a given socket client.
- * @param io - The global Socket.io server instance (to broadcast to everyone)
- * @param socket - The individual and unique connection of the newly connected client
+ * Registers message-related WebSocket event listeners for an authenticated socket client.
+ *
+ * @param {Server} io - The global Socket.io server instance
+ * @param {Socket} socket - The individual socket connection
  */
 export const registerMessageHandlers = (io: Server, socket: Socket) => {
-  // Écoute de l'événement déclenché par le front-end lorsqu'un utilisateur envoie un message
-  socket.on("message:send", async (data: { content: string; userId: string; conversationId: string }) => {
+  /**
+   * Listens for incoming messages sent by a client.
+   * Validates membership, persists to database, and broadcasts to the target room.
+   */
+  socket.on("message:send", async (data: { content: string; conversationId: string }) => {
     try {
       const { content, conversationId } = data;
-
-      // On récupère l'ID de l'utilisateur authentifié via le token JWT
+      // On récupère l'ID utilisateur injecté de manière sécurisée par le middleware de handshake
       const userId = socket.data.userId;
 
-      // 1. Persistance : On passe par notre client pour enregistrer le message en BDD avec ses relations
+      // 1. Sécurité : Vérification que l'utilisateur fait bien partie de la conversation
+      await conversationClient.verifyUserAccess(userId, conversationId);
+
+      // 2. Persistance : Enregistrement du message en base de données
       const newMessage = await messageClient.createMessage(content, userId, conversationId);
 
-      // 2. Diffusion (Broadcast) : On envoie le nouveau message validé à TOUS les clients connectés
-      io.emit("message:received", newMessage);
+      // 3. Diffusion ciblée : On émet le message UNIQUEMENT aux membres de la room
+      io.to(conversationId).emit("message:received", newMessage);
     } catch (error: any) {
-      // 3. Gestion des erreurs : Si la validation ou l'insertion échoue,
-      // on prévient UNIQUEMENT l'expéditeur via son socket individuel
+      // Gestion d'erreur : Notification individuelle à l'expéditeur uniquement
       socket.emit("error", {
         message: error.message || "Erreur lors de l'envoi du message.",
       });
