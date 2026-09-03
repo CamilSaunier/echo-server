@@ -5,18 +5,17 @@ const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$
 
 export const registerSchema = z.object({
   body: z.object({
-    email: z.email({ error: "Invalid email format" }),
-    username: z.string().min(3, "Username must be at least 3 characters long"),
+    email: z.string().email("Format d'email invalide"),
+    username: z.string().min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
     password: z.string().regex(passwordRegex, {
-      message:
-        "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.",
+      message: "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.",
     }),
   }),
 });
 
 export const loginSchema = z.object({
   body: z.object({
-    email: z.email({ error: "Invalid email format" }),
-    password: z.string().min(1, "Password is required"), // Pour le login, on vérifie juste qu'il n'est pas vide
+    email: z.string().email("Format d'email invalide"),
+    password: z.string().min(1, "Le mot de passe est requis"),
   }),
 });
