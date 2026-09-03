@@ -28,14 +28,16 @@ export class ConversationController {
    */
   getUserConversations = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // Récupération de l'ID utilisateur injecté par le middleware d'authentification JWT
-      const userId = (req as any).user.id;
+      // Récupération de userId typé depuis le middleware (req.user)
+      const userId = req.user?.userId;
 
-      // Récupération des conversations associées à l'utilisateur
+      if (!userId) {
+        throw new AppError("Identifiant utilisateur introuvable dans la requête.", 401);
+      }
+
       const conversations = await this.conversationClient.getUserConversations(userId);
       res.status(200).json(conversations);
     } catch (error) {
-      // Transmission de l'erreur au middleware global d'Express
       next(error);
     }
   };

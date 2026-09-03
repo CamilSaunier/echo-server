@@ -1,3 +1,4 @@
+// src/repositories/refresh-token.repository.ts
 import { prisma } from "../config/prisma";
 import type { RefreshToken } from "@prisma/client";
 
@@ -34,20 +35,16 @@ export class RefreshTokenRepository {
   }
 
   /**
-   * Deletes a specific refresh token by its hash value (used on logout).
+   * Deletes a specific refresh token by its hash value (used on logout or rotation).
    *
    * @param token - The hashed refresh token to delete.
    */
   async deleteByToken(token: string): Promise<void> {
-    await prisma.refreshToken
-      .delete({
-        where: {
-          token,
-        },
-      })
-      .catch(() => {
-        // Ignore if token doesn't exist
-      });
+    await prisma.refreshToken.deleteMany({
+      where: {
+        token,
+      },
+    });
   }
 
   /**
@@ -70,6 +67,17 @@ export class RefreshTokenRepository {
   async findByToken(token: string): Promise<RefreshToken | null> {
     return prisma.refreshToken.findFirst({
       where: { token },
+    });
+  }
+
+  /**
+   * Deletes a specific refresh token by its primary key ID.
+   *
+   * @param id - The UUID of the refresh token record.
+   */
+  async deleteById(id: string): Promise<void> {
+    await prisma.refreshToken.delete({
+      where: { id },
     });
   }
 }
