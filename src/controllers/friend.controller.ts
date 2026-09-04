@@ -16,17 +16,17 @@ export class FriendController {
    * Sends a new friend request to another user.
    * Route: POST /api/friends/request
    *
-   * @param req - Express Request containing user payload and friendId in body.
-   * @param res - Express Response object.
-   * @param next - Express NextFunction for middleware error propagation.
+   * @param req - Express request object containing the recipient's friendId in body
+   * @param res - Express response object
+   * @param next - Express next function for error handling
+   * @returns Promise resolving to void
    */
   sendFriendRequest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // Récupération de l'ID de l'utilisateur connecté via le middleware d'authentification
-      const userId = (req as any).user.id;
+      // Extraction de l'ID utilisateur authentifié
+      const userId = req.user!.userId;
       const { friendId } = req.body;
 
-      // Délégation de la création de la demande au client métier
       const friendship = await this.friendClient.sendFriendRequest(userId, friendId);
 
       res.status(201).json({
@@ -34,7 +34,6 @@ export class FriendController {
         data: friendship,
       });
     } catch (error) {
-      // Transmission de l'erreur au middleware global d'erreurs
       next(error);
     }
   };
@@ -43,14 +42,14 @@ export class FriendController {
    * Responds to an incoming pending friend request (accept or reject).
    * Route: PATCH /api/friends/request/:friendshipId
    *
-   * @param req - Express Request containing friendshipId parameter and accept boolean in body.
-   * @param res - Express Response object.
-   * @param next - Express NextFunction for middleware error propagation.
+   * @param req - Express request object containing friendshipId in params and accept boolean in body
+   * @param res - Express response object
+   * @param next - Express next function for error handling
+   * @returns Promise resolving to void
    */
   respondToFriendRequest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // Récupération de l'utilisateur connecté
-      const userId = (req as any).user.id;
+      const userId = req.user!.userId;
       const friendshipId = req.params.friendshipId as string;
       const { accept } = req.body;
 
@@ -58,7 +57,6 @@ export class FriendController {
         throw new AppError("L'identifiant de la demande est requis", 400);
       }
 
-      // Traitement de la réponse (acceptation ou refus/suppression)
       const result = await this.friendClient.respondToFriendRequest(userId, friendshipId, accept);
 
       res.status(200).json({
@@ -74,15 +72,15 @@ export class FriendController {
    * Retrieves the list of active confirmed friends for the authenticated user.
    * Route: GET /api/friends
    *
-   * @param req - Express Request with authenticated user context.
-   * @param res - Express Response object.
-   * @param next - Express NextFunction for middleware error propagation.
+   * @param req - Express request object
+   * @param res - Express response object
+   * @param next - Express next function for error handling
+   * @returns Promise resolving to void
    */
   getFriends = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = (req as any).user.id;
+      const userId = req.user!.userId;
 
-      // Récupération de la liste des amis confirmés
       const friends = await this.friendClient.getFriendsList(userId);
 
       res.status(200).json({
@@ -98,15 +96,15 @@ export class FriendController {
    * Retrieves incoming pending friend requests for the authenticated user.
    * Route: GET /api/friends/requests/pending
    *
-   * @param req - Express Request with authenticated user context.
-   * @param res - Express Response object.
-   * @param next - Express NextFunction for middleware error propagation.
+   * @param req - Express request object
+   * @param res - Express response object
+   * @param next - Express next function for error handling
+   * @returns Promise resolving to void
    */
   getPendingRequests = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = (req as any).user.id;
+      const userId = req.user!.userId;
 
-      // Récupération des demandes d'amis en attente reçues
       const pendingRequests = await this.friendClient.getPendingRequests(userId);
 
       res.status(200).json({
@@ -122,21 +120,20 @@ export class FriendController {
    * Removes a friend from the user's friend list.
    * Route: DELETE /api/friends/:friendId
    *
-   * @param req - Express Request containing target friendId in path parameters.
-   * @param res - Express Response object.
-   * @param next - Express NextFunction for middleware error propagation.
+   * @param req - Express request object containing friendId in params
+   * @param res - Express response object
+   * @param next - Express next function for error handling
+   * @returns Promise resolving to void
    */
   removeFriend = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // Récupération de l'utilisateur et extraction de l'ID de l'ami à supprimer
-      const userId = (req as any).user.id;
+      const userId = req.user!.userId;
       const friendId = req.params.friendId as string;
 
       if (!friendId) {
         throw new AppError("L'identifiant de l'ami est requis", 400);
       }
 
-      // Suppression de l'amitié en base
       await this.friendClient.removeFriend(userId, friendId);
 
       res.status(200).json({

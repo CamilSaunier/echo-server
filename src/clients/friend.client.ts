@@ -8,12 +8,20 @@ export class FriendClient {
   /**
    * Validates and executes a friend request emission between two users.
    *
-   * @param userId - The ID of the requesting user.
-   * @param friendId - The ID of the recipient user.
-   * @throws {AppError} If users are identical, or if a friendship/pending request already exists.
-   * @returns The newly created friendship record.
+   * @param userId - Unique identifier of the requesting user
+   * @param friendId - Unique identifier of the target user
+   * @returns Promise resolving to the created friendship object
+   * @throws AppError If users are identical, unauthenticated, or relationship already exists
    */
   async sendFriendRequest(userId: string, friendId: string) {
+    if (!userId) {
+      throw new AppError("Utilisateur non authentifié", 401);
+    }
+
+    if (!friendId) {
+      throw new AppError("L'identifiant du destinataire est requis", 400);
+    }
+
     // Interdiction de s'ajouter soi-même
     if (userId === friendId) {
       throw new AppError("Vous ne pouvez pas vous ajouter vous-même en ami", 400);
@@ -34,29 +42,31 @@ export class FriendClient {
       }
     }
 
-    // Création de la demande via le repository
     return friendRepository.sendRequest(userId, friendId);
   }
 
   /**
-   * Processes a response (accept/reject) to an incoming friend request.
+   * Processes a response (accept or reject) to an incoming friend request.
    *
-   * @param userId - The ID of the user responding (recipient of the original request).
-   * @param friendshipId - The unique ID of the pending friendship request.
-   * @param accept - True to accept the request, false to decline/delete it.
-   * @throws {AppError} If the request is not found or does not belong to the user.
-   * @returns The updated or deleted friendship record.
+   * @param userId - Unique identifier of the responding user
+   * @param friendshipId - Unique identifier of the friendship record
+   * @param accept - True to accept the request, false to reject/delete it
+   * @returns Promise resolving to the updated or deleted friendship record
+   * @throws AppError If user is unauthenticated or request is not found/unauthorized
    */
   async respondToFriendRequest(userId: string, friendshipId: string, accept: boolean) {
-    // On s'assure que la demande existe et qu'elle est bien destinée à l'utilisateur connecté
+    if (!userId) {
+      throw new AppError("Utilisateur non authentifié", 401);
+    }
+
+    // Contrôle que la demande existe et concerne bien l'utilisateur connecté
     const pendingRequests = await friendRepository.getPendingRequests(userId);
-    const request = pendingRequests.find((req) => req.id === friendshipId);
+    const request = pendingRequests.find((req: { id: string }) => req.id === friendshipId);
 
     if (!request) {
       throw new AppError("Demande d'amitié introuvable ou non autorisée", 404);
     }
 
-    // Acceptation ou refu (suppression de la ligne)
     if (accept) {
       return friendRepository.acceptRequest(friendshipId);
     } else {
@@ -67,33 +77,51 @@ export class FriendClient {
   /**
    * Fetches the confirmed friends list for a user.
    *
-   * @param userId - The user's ID.
-   * @returns Array of active friendships.
+   * @param userId - Unique identifier of the user
+   * @returns Promise resolving to the list of confirmed friends
+   * @throws AppError If user is unauthenticated
    */
   async getFriendsList(userId: string) {
+    if (!userId) {
+      throw new AppError("Utilisateur non authentifié", 401);
+    }
+
     return friendRepository.getFriends(userId);
   }
 
   /**
    * Fetches pending incoming friend requests for a user.
    *
-   * @param userId - The user's ID.
-   * @returns Array of pending friend requests.
+   * @param userId - Unique identifier of the user
+   * @returns Promise resolving to the list of pending friend requests
+   * @throws AppError If user is unauthenticated
    */
   async getPendingRequests(userId: string) {
+    if (!userId) {
+      throw new AppError("Utilisateur non authentifié", 401);
+    }
+
     return friendRepository.getPendingRequests(userId);
   }
 
   /**
    * Removes an existing active friend connection.
    *
-   * @param userId - The initiating user's ID.
-   * @param friendId - The target friend's ID to remove.
-   * @throws {AppError} If no active friendship exists between the two users.
-   * @returns The deleted friendship record.
+   * @param userId - Unique identifier of the initiating user
+   * @param friendId - Unique identifier of the friend to remove
+   * @returns Promise resolving to the deleted friendship record
+   * @throws AppError If user is unauthenticated or friendship relation does not exist
    */
   async removeFriend(userId: string, friendId: string) {
-    // Recherche d'une amitié active
+    if (!userId) {
+      throw new AppError("Utilisateur non authentifié", 401);
+    }
+
+    if (!friendId) {
+      throw new AppError("L'identifiant de l'ami est requis", 400);
+    }
+
+    // Vérification que la relation existe et est bien acceptée
     const friendship = await friendRepository.findFriendship(userId, friendId);
 
     if (!friendship || friendship.status !== "ACCEPTED") {
