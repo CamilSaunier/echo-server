@@ -54,25 +54,27 @@ export class ConversationController {
    */
   getConversationMessages = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = (req as any).user.id;
+      const userId = req.user?.userId;
       const { conversationId } = req.params;
 
-      // Validation du paramètre de route pour rassurer TypeScript et sécuriser l'appel
+      if (!userId) {
+        throw new AppError("Identifiant utilisateur introuvable dans la requête.", 401);
+      }
+
       if (!conversationId || typeof conversationId !== "string") {
         throw new AppError("Identifiant de conversation invalide ou manquant.", 400);
       }
 
-      // 1. Contrôle d'accès : vérification que l'utilisateur participe bien à la conversation
+      // 1. Contrôle d'accès
       await this.conversationClient.verifyUserAccess(userId, conversationId);
 
-      // 2. Extraction de l'historique complet des messages pour la conversation ciblée
+      // 2. Récupération des messages
       const messages = await this.messageClient.getMessagesByConversationId(conversationId);
       res.status(200).json(messages);
     } catch (error) {
       next(error);
     }
   };
-
   /**
    * Starts or retrieves an existing 1-to-1 direct conversation with another user.
    */
