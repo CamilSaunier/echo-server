@@ -15,9 +15,10 @@ import { authRoutes } from "./routes/auth.routes.js";
 import { conversationRoutes } from "./routes/conversation.routes.js";
 import { friendRoutes } from "./routes/friend.routes.js";
 import { messageRoutes } from "./routes/message.routes.js";
+import { userRoutes } from "./routes/user.routes.js";
 
 // WebSockets
-import { configureWebSocket } from "./socket";
+import { configureWebSocket } from "./socket/index.js";
 
 const app: Application = express();
 const PORT = process.env.PORT || 8000;
@@ -36,6 +37,7 @@ app.use(cookieParser());
 
 // --- ROUTES API ---
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/conversations", conversationRoutes);
 app.use("/api/friends", friendRoutes);
 app.use("/api/messages", messageRoutes);
