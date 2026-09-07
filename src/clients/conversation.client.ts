@@ -65,4 +65,29 @@ export class ConversationClient {
       throw new AppError("Accès refusé : vous ne participez pas à cette conversation.", 403);
     }
   }
+  /**
+   * Finds an existing direct conversation between two users or creates a new one.
+   *
+   * @async
+   * @function getOrCreateDirectConversation
+   * @param {string} userId - Current authenticated user ID
+   * @param {string} targetUserId - Target friend's user ID
+   * @returns {Promise<any>} Direct conversation object
+   */
+  async getOrCreateDirectConversation(userId: string, targetUserId: string) {
+    if (!userId || !targetUserId) {
+      throw new AppError("Identifiants utilisateurs requis.", 400);
+    }
+
+    if (userId === targetUserId) {
+      throw new AppError("Impossible de créer une conversation avec soi-même.", 400);
+    }
+
+    const existingConversation = await this.conversationRepository.findDirectConversation(userId, targetUserId);
+    if (existingConversation) {
+      return existingConversation;
+    }
+
+    return await this.conversationRepository.createDirectConversation(userId, targetUserId);
+  }
 }

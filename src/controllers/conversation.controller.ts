@@ -72,4 +72,27 @@ export class ConversationController {
       next(error);
     }
   };
+
+  /**
+   * Starts or retrieves an existing 1-to-1 direct conversation with another user.
+   */
+  getOrCreateDirectConversation = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      const { targetUserId } = req.body;
+
+      if (!userId) {
+        throw new AppError("Identifiant utilisateur introuvable dans la requête.", 401);
+      }
+
+      if (!targetUserId || typeof targetUserId !== "string") {
+        throw new AppError("Identifiant du destinataire invalide.", 400);
+      }
+
+      const conversation = await this.conversationClient.getOrCreateDirectConversation(userId, targetUserId);
+      res.status(200).json(conversation);
+    } catch (error) {
+      next(error);
+    }
+  };
 }

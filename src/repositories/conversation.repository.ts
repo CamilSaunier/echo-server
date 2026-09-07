@@ -14,7 +14,6 @@ export class ConversationRepository {
    * @returns {Promise<any[]>} Array of conversation records with included relations
    */
   async findConversationsByUserId(userId: string) {
-    // Requête Prisma pour extraire les conversations auxquelles l'utilisateur participe
     return await prisma.conversation.findMany({
       where: {
         participants: {
@@ -24,7 +23,6 @@ export class ConversationRepository {
         },
       },
       include: {
-        // Inclusion des données des participants pour afficher les profils dans le chat
         participants: {
           include: {
             user: {
@@ -36,7 +34,6 @@ export class ConversationRepository {
             },
           },
         },
-        // Récupération uniquement du dernier message pour l'aperçu dans la liste
         messages: {
           orderBy: {
             createdAt: "desc",
@@ -94,5 +91,83 @@ export class ConversationRepository {
       select: { id: true },
     });
     return !!participant;
+  }
+
+  /**
+   * Finds an existing direct (1-to-1) conversation between two users.
+   *
+   * @async
+   * @function findDirectConversation
+   * @param {string} userId1 - First user ID
+   * @param {string} userId2 - Second user ID
+   * @returns {Promise<any | null>} Conversation object with relations if exists
+   */
+  async findDirectConversation(userId1: string, userId2: string) {
+    return await prisma.conversation.findFirst({
+      where: {
+        isGroup: false,
+        AND: [{ participants: { some: { userId: userId1 } } }, { participants: { some: { userId: userId2 } } }],
+      },
+      include: {
+        participants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                email: true,
+              },
+            },
+          },
+        },
+        messages: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: {
+            user: { select: { id: true, username: true } },
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Creates a new direct (1-to-1) conversation between two users.
+   *
+   * @async
+   * @function createDirectConversation
+   * @param {string} userId1 - First user ID
+   * @param {string} userId2 - Second user ID
+   * @returns {Promise<any>} Created conversation object with relations
+   */
+  async createDirectConversation(userId1: string, userId2: string) {
+    return await prisma.conversation.create({
+      data: {
+        isGroup: false,
+        participants: {
+          create: [{ userId: userId1 }, { userId: userId2 }],
+        },
+      },
+      include: {
+        participants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                email: true,
+              },
+            },
+          },
+        },
+        messages: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: {
+            user: { select: { id: true, username: true } },
+          },
+        },
+      },
+    });
   }
 }
