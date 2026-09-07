@@ -2,6 +2,12 @@ import { prisma } from "../config/prisma";
 import type { User } from "@prisma/client";
 
 /**
+ * Safe user projection excluding sensitive fields like password hashes.
+ * Projection sécurisée de l'utilisateur sans les données sensibles.
+ */
+export type SafeUser = Pick<User, "id" | "username" | "email" | "createdAt">;
+
+/**
  * Repository for managing user data operations in the database.
  */
 export class UserRepository {
@@ -26,6 +32,54 @@ export class UserRepository {
   async findById(id: string): Promise<User | null> {
     return prisma.user.findUnique({
       where: { id },
+    });
+  }
+
+  /**
+   * Finds a user by their exact username.
+   * Recherche un utilisateur par son pseudo exact.
+   *
+   * @param username - The exact username to search for.
+   * @returns Safe user projection if found, null otherwise.
+   */
+  async findByUsername(username: string): Promise<SafeUser | null> {
+    return prisma.user.findUnique({
+      where: { username },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        createdAt: true,
+      },
+    });
+  }
+
+  /**
+   * Searches users matching a partial or full username (case-insensitive).
+   * Recherche des utilisateurs par correspondance partielle sur le pseudo (insensible à la casse).
+   *
+   * @param query - The search string.
+   * @param currentUserId - The ID of the requesting user to exclude from results.
+   * @returns Array of safe user projections matching the query.
+   */
+  async searchByUsername(query: string, currentUserId: string): Promise<SafeUser[]> {
+    return prisma.user.findMany({
+      where: {
+        username: {
+          contains: query,
+          mode: "insensitive",
+        },
+        NOT: {
+          id: currentUserId,
+        },
+      },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        createdAt: true,
+      },
+      take: 10,
     });
   }
 

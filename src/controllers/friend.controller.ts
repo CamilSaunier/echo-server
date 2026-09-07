@@ -23,8 +23,11 @@ export class FriendController {
    */
   sendFriendRequest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // Extraction de l'ID utilisateur authentifié
-      const userId = req.user!.userId;
+      const userId = req.user?.userId;
+      if (!userId) {
+        throw new AppError("Utilisateur non authentifié", 401);
+      }
+
       const { friendId } = req.body;
 
       const friendship = await this.friendClient.sendFriendRequest(userId, friendId);
@@ -49,12 +52,20 @@ export class FriendController {
    */
   respondToFriendRequest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = req.user!.userId;
+      const userId = req.user?.userId;
+      if (!userId) {
+        throw new AppError("Utilisateur non authentifié", 401);
+      }
+
       const friendshipId = req.params.friendshipId as string;
       const { accept } = req.body;
 
       if (!friendshipId) {
         throw new AppError("L'identifiant de la demande est requis", 400);
+      }
+
+      if (typeof accept !== "boolean") {
+        throw new AppError("Le champ 'accept' est requis et doit être un booléen (true ou false)", 400);
       }
 
       const result = await this.friendClient.respondToFriendRequest(userId, friendshipId, accept);
@@ -79,7 +90,10 @@ export class FriendController {
    */
   getFriends = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = req.user!.userId;
+      const userId = req.user?.userId;
+      if (!userId) {
+        throw new AppError("Utilisateur non authentifié", 401);
+      }
 
       const friends = await this.friendClient.getFriendsList(userId);
 
@@ -103,7 +117,10 @@ export class FriendController {
    */
   getPendingRequests = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = req.user!.userId;
+      const userId = req.user?.userId;
+      if (!userId) {
+        throw new AppError("Utilisateur non authentifié", 401);
+      }
 
       const pendingRequests = await this.friendClient.getPendingRequests(userId);
 
@@ -127,7 +144,11 @@ export class FriendController {
    */
   removeFriend = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = req.user!.userId;
+      const userId = req.user?.userId;
+      if (!userId) {
+        throw new AppError("Utilisateur non authentifié", 401);
+      }
+
       const friendId = req.params.friendId as string;
 
       if (!friendId) {
