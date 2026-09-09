@@ -27,4 +27,11 @@ router.post("/direct", authenticateToken, conversationController.getOrCreateDire
  */
 router.get("/:conversationId/messages", authenticateToken, conversationController.getConversationMessages);
 
+/**
+ * @route   DELETE /:conversationId/leave
+ * @desc    Leave a conversation
+ * @access  Private
+ */
+router.delete("/:conversationId/leave", authenticateToken, conversationController.leaveConversation);
+
 export const conversationRoutes: Router = router;

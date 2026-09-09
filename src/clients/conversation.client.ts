@@ -90,4 +90,17 @@ export class ConversationClient {
 
     return await this.conversationRepository.createDirectConversation(userId, targetUserId);
   }
+
+  /**
+   * Removes the specified user from a conversation after verifying access.
+   *
+   * @async
+   * @param {string} userId - ID of the user requesting to leave
+   * @param {string} conversationId - Target conversation ID
+   * @returns {Promise<void>}
+   */
+  async leaveConversation(userId: string, conversationId: string): Promise<void> {
+    await this.verifyUserAccess(userId, conversationId);
+    await this.conversationRepository.removeParticipant(conversationId, userId);
+  }
 }

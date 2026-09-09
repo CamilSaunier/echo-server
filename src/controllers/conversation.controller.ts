@@ -97,4 +97,34 @@ export class ConversationController {
       next(error);
     }
   };
+
+  /**
+   * Removes the authenticated user from a specified conversation.
+   *
+   * @async
+   * @function leaveConversation
+   * @param {Request} req - Express Request object containing conversationId parameter
+   * @param {Response} res - Express Response object
+   * @param {NextFunction} next - Express NextFunction middleware callback
+   * @returns {Promise<void>}
+   */
+  leaveConversation = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      const { conversationId } = req.params;
+
+      if (!userId) {
+        throw new AppError("Identifiant utilisateur introuvable dans la requête.", 401);
+      }
+
+      if (!conversationId || typeof conversationId !== "string") {
+        throw new AppError("Identifiant de conversation invalide ou manquant.", 400);
+      }
+
+      await this.conversationClient.leaveConversation(userId, conversationId);
+      res.status(200).json({ message: "Conversation quittée avec succès." });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

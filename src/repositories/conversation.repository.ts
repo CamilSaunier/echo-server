@@ -170,4 +170,21 @@ export class ConversationRepository {
       },
     });
   }
+
+  /**
+   * Removes a participant from a specified conversation.
+   *
+   * @async
+   * @param {string} conversationId - The unique identifier of the conversation
+   * @param {string} userId - The unique identifier of the user to remove
+   * @returns {Promise<Prisma.BatchPayload>} Result of the deletion query
+   */
+  async removeParticipant(conversationId: string, userId: string) {
+    return prisma.conversationParticipant.deleteMany({
+      where: {
+        conversationId,
+        userId,
+      },
+    });
+  }
 }
