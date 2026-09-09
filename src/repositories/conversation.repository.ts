@@ -6,7 +6,7 @@ import { prisma } from "../config/prisma";
  */
 export class ConversationRepository {
   /**
-   * Retrieves all detailed conversation records for a given user, including participants and latest message.
+   * Retrieves all detailed conversation records for a given user where they haven't left, including participants and latest message.
    *
    * @async
    * @function findConversationsByUserId
@@ -19,6 +19,7 @@ export class ConversationRepository {
         participants: {
           some: {
             userId,
+            isLeft: false, // On ne récupère que les conversations non quittées/masquées
           },
         },
       },
@@ -56,7 +57,7 @@ export class ConversationRepository {
   }
 
   /**
-   * Retrieves all conversation IDs for a specific user.
+   * Retrieves all conversation IDs for a specific user where they haven't left.
    *
    * @async
    * @function findConversationIdsByUserId
@@ -65,14 +66,17 @@ export class ConversationRepository {
    */
   async findConversationIdsByUserId(userId: string): Promise<string[]> {
     const participations = await prisma.conversationParticipant.findMany({
-      where: { userId },
+      where: {
+        userId,
+        isLeft: false,
+      },
       select: { conversationId: true },
     });
     return participations.map((p) => p.conversationId);
   }
 
   /**
-   * Checks if a user is a participant in a given conversation.
+   * Checks if a user is a participant in a given conversation (and active).
    *
    * @async
    * @function isUserInConversation
@@ -94,7 +98,7 @@ export class ConversationRepository {
   }
 
   /**
-   * Finds an existing direct (1-to-1) conversation between two users.
+   * Finds an existing direct (1-to-1) conversation between two users (even if hidden/left by one).
    *
    * @async
    * @function findDirectConversation
@@ -172,18 +176,40 @@ export class ConversationRepository {
   }
 
   /**
-   * Removes a participant from a specified conversation.
+   * Marks a conversation as left/hidden for a specific user instead of deleting the relation.
    *
    * @async
    * @param {string} conversationId - The unique identifier of the conversation
-   * @param {string} userId - The unique identifier of the user to remove
-   * @returns {Promise<Prisma.BatchPayload>} Result of the deletion query
+   * @param {string} userId - The unique identifier of the user
+   * @returns {Promise<any>} Updated participant record
    */
-  async removeParticipant(conversationId: string, userId: string) {
-    return prisma.conversationParticipant.deleteMany({
+  async markParticipantAsLeft(conversationId: string, userId: string) {
+    return prisma.conversationParticipant.update({
+      where: {
+        userId_conversationId: {
+          userId,
+          conversationId,
+        },
+      },
+      data: {
+        isLeft: true,
+      } as any,
+    });
+  }
+
+  /**
+   * Resets the isLeft flag for all participants in a conversation when a new message is sent.
+   *
+   * @async
+   * @param {string} conversationId - The unique identifier of the conversation
+   */
+  async reactivateParticipantsOnNewMessage(conversationId: string) {
+    return prisma.conversationParticipant.updateMany({
       where: {
         conversationId,
-        userId,
+      },
+      data: {
+        isLeft: false,
       },
     });
   }

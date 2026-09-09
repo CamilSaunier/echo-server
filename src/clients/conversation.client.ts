@@ -92,7 +92,7 @@ export class ConversationClient {
   }
 
   /**
-   * Removes the specified user from a conversation after verifying access.
+   * Marks a conversation as left/hidden for the specified user after verifying access.
    *
    * @async
    * @param {string} userId - ID of the user requesting to leave
@@ -101,6 +101,6 @@ export class ConversationClient {
    */
   async leaveConversation(userId: string, conversationId: string): Promise<void> {
     await this.verifyUserAccess(userId, conversationId);
-    await this.conversationRepository.removeParticipant(conversationId, userId);
+    await this.conversationRepository.markParticipantAsLeft(conversationId, userId);
   }
 }

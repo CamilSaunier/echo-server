@@ -2,6 +2,7 @@
 import { Server, Socket } from "socket.io";
 import { MessageClient } from "../../clients/message.client";
 import { ConversationClient } from "../../clients/conversation.client";
+import { prisma } from "../../config/prisma";
 
 const messageClient = new MessageClient();
 const conversationClient = new ConversationClient();
@@ -15,7 +16,8 @@ const conversationClient = new ConversationClient();
 export const registerMessageHandlers = (io: Server, socket: Socket) => {
   /**
    * Listens for incoming messages sent by a client.
-   * Validates membership, persists to database, and broadcasts to the target room.
+   * Validates membership, persists to database, broadcasts to the room,
+   * and ensures participants who left the conversation are re-added to the socket room to receive it.
    */
   socket.on("message:send", async (data: { content: string; conversationId: string }) => {
     try {
@@ -26,10 +28,26 @@ export const registerMessageHandlers = (io: Server, socket: Socket) => {
       // 1. Sécurité : Vérification que l'utilisateur fait bien partie de la conversation
       await conversationClient.verifyUserAccess(userId, conversationId);
 
-      // 2. Persistance : Enregistrement du message en base de données
+      // 2. Persistance : Enregistrement du message en base de données (et réactivation auto des participants en BDD)
       const newMessage = await messageClient.createMessage(content, userId, conversationId);
 
-      // 3. Diffusion ciblée : On émet le message UNIQUEMENT aux membres de la room
+      // 3. Récupération de tous les participants de la conversation pour gérer les sockets
+      const participants = await prisma.conversationParticipant.findMany({
+        where: { conversationId },
+        select: { userId: true },
+      });
+
+      // 4. Pour chaque participant, on s'assure que sa socket connectée rejoint la room de la conversation
+      // (Utile si un participant avait quitté/masqué la conversation et n'était plus dans la room Socket.io)
+      const sockets = await io.fetchSockets();
+      for (const s of sockets) {
+        const sUserId = s.data.userId;
+        if (participants.some((p) => p.userId === sUserId)) {
+          s.join(conversationId);
+        }
+      }
+
+      // 5. Diffusion ciblée : On émet le message à tous les membres présents dans la room
       io.to(conversationId).emit("message:received", newMessage);
     } catch (error: any) {
       // Gestion d'erreur : Notification individuelle à l'expéditeur uniquement

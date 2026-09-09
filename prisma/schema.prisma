@@ -95,6 +95,7 @@ model ConversationParticipant {
   conversationId String
   joinedAt       DateTime     @default(now())
   lastReadAt     DateTime     @default(now()) // Pour le suivi des messages non lus
+  isLeft         Boolean      @default(false) // Masque la conversation pour l'utilisateur sans rompre le lien
 
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
