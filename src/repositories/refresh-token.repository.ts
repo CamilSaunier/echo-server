@@ -75,8 +75,8 @@ export class RefreshTokenRepository {
    *
    * @param id - The UUID of the refresh token record.
    */
-  async deleteById(id: string): Promise<void> {
-    await prisma.refreshToken.delete({
+  async deleteById(id: string): Promise<{ count: number }> {
+    return prisma.refreshToken.deleteMany({
       where: { id },
     });
   }

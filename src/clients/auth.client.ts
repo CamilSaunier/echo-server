@@ -119,7 +119,12 @@ export class AuthClient {
     // -------------------------------------------------------------
     // 4. ROTATION : ON SUPPRIME IMMÉDIATEMENT L'ANCIEN TOKEN
     // -------------------------------------------------------------
-    await this.refreshTokenRepository.deleteById(storedToken.id);
+    const deleteResult = await this.refreshTokenRepository.deleteById(storedToken.id);
+
+    // Si count === 0, une autre requête parallèle a déjà consommé ce token
+    if (deleteResult.count === 0) {
+      throw new AppError("Invalid or revoked refresh token", 401);
+    }
 
     // 5. Vérification de l'utilisateur
     const user = await this.userRepository.findById(storedToken.userId);
