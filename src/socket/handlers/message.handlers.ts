@@ -8,7 +8,7 @@ const messageClient = new MessageClient();
 const conversationClient = new ConversationClient();
 
 /**
- * Registers message-related WebSocket event listeners for an authenticated socket client.
+ * Registers message-related and typing WebSocket event listeners for an authenticated socket client.
  *
  * @param {Server} io - The global Socket.io server instance
  * @param {Socket} socket - The individual socket connection
@@ -54,6 +54,27 @@ export const registerMessageHandlers = (io: Server, socket: Socket) => {
       socket.emit("error", {
         message: error.message || "Erreur lors de l'envoi du message.",
       });
+    }
+  });
+
+  /**
+   * Listens for typing status updates from a client and broadcasts them to other room members.
+   */
+  socket.on("typing", async (data: { conversationId: string; isTyping: boolean }) => {
+    try {
+      const { conversationId, isTyping } = data;
+      const userId = socket.data.userId;
+
+      // Vérification rapide d'accès pour éviter l'émission non autorisée dans une room
+      await conversationClient.verifyUserAccess(userId, conversationId);
+
+      // Diffusion à tous les membres de la room SAUF à l'expéditeur
+      socket.to(conversationId).emit("user:typing", {
+        userId,
+        isTyping,
+      });
+    } catch (error) {
+      // Erreurs volontairement ignorées pour ne pas saturer les logs en cas de frappe rapide
     }
   });
 };
