@@ -31,7 +31,7 @@ configureWebSocket(server);
 app.use(helmetMiddleware);
 app.use(corsMiddleware);
 app.use(morganMiddleware);
-// app.use("/api/", apiLimiter);
+// app.use("/api/", apiLimiter); // TODO à remettre
 app.use(express.json({ limit: "10kb" }));
 app.use(cookieParser());
 
