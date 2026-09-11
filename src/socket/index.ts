@@ -6,6 +6,8 @@ import { Server, Socket } from "socket.io";
 import { socketAuthMiddleware } from "./middlewares/auth.middleware";
 import { registerMessageHandlers } from "././handlers/message.handlers";
 import { registerConversationHandlers } from "././handlers/conversation.handlers";
+import { registerTypingHandlers } from "./handlers/typing.handlers";
+import { registerPresenceHandlers } from "./handlers/presence.handlers";
 import { ConversationClient } from "../clients/conversation.client";
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
@@ -38,7 +40,9 @@ export const configureWebSocket = (httpServer: HttpServer) => {
     }
 
     // 2. Enregistrement modulaire des handlers
+    registerPresenceHandlers(io, socket);
     registerMessageHandlers(io, socket);
+    registerTypingHandlers(io, socket);
     registerConversationHandlers(io, socket);
 
     socket.on("disconnect", () => {
